@@ -1,0 +1,165 @@
+<template>
+  <el-table :data="paginated" style="width: 100%" :fit="false" :stripe="true">
+    <el-table-column prop="id" label="ID" width="400" />
+    <el-table-column prop="name" label="名字" width="400" />
+    <el-table-column prop="comment" label="评论" width="400" :show-overflow-tooltip="true" />
+    <el-table-column align="right" width="400">
+      <template #header>
+        <el-input v-model="search" placeholder="name to search" style="width: 280px;margin-right: 5px;" />
+		<el-button @click="dialogVisible2 = true" width="300" type="warning">添加</el-button>
+		<el-dialog v-model="dialogVisible2" 
+		title="添加" width="30%" 
+		:modal="false" 
+		:append-to-body="true" 
+		:show-close="false" 
+		:center="true" style="background-color: #f3f3f3;">
+		<el-form label-width="50px">
+		  <el-form-item label="名字">
+		    <el-input v-model="comData.name" />
+		  </el-form-item>
+		  <el-form-item label="评论">
+		    <el-input v-model="comData.comment" placeholder="评论" />
+		  </el-form-item>
+		  </el-form>
+		  <template #footer>
+		    <span class="dialog-footer">
+		      <el-button @click="dialogVisible2 = false">取消</el-button>
+		      <el-button type="primary" @click="addSort">添加</el-button>
+		    </span>
+		  </template>
+		</el-dialog>
+      </template>
+      <template #default="scope">
+        <el-button type="info" @click="editRow(scope.row)">编辑</el-button>
+        <el-button type="danger" @click="todel(scope.row.id)">删除</el-button>
+      </template>
+    </el-table-column>
+  </el-table>
+  
+  <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="currentPage"
+        :page-sizes="[11, 22, 33, 44]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+      >
+  	  </el-pagination>
+  
+  <el-dialog v-model="dialogVisible" title="编辑" width="30%" :show-close="false" :center="true">
+    <el-form :model="selectedRow" label-width="50px">
+      <el-form-item label="ID">
+        <el-input v-model="selectedRow.id" disabled />
+      </el-form-item>
+      <el-form-item label="名字">
+        <el-input v-model="selectedRow.name" />
+      </el-form-item>
+      <el-form-item label="评论">
+        <el-input v-model="selectedRow.comment" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="toupd">更新</el-button>
+      </span>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup>
+import { defineProps, ref, computed,defineEmits,reactive } from 'vue'
+import { deleteComments,updateComments,getaddComments } from '../../api/index'
+
+const dialogVisible = ref(false)
+const dialogVisible2 = ref(false)
+const selectedRow = ref(null)
+
+const props = defineProps(['leftcommentdata']);
+const emits = defineEmits(['delete3','updatecom']);
+const search = ref('');
+const commentdata = computed(() =>
+  props.leftcommentdata.filter(
+    (data) =>
+      !search.value || data.name.toLowerCase().includes(search.value.toLowerCase())
+  )
+);
+
+/**
+ * 删除用户
+ */
+const todel = async (id) => {
+  try {
+    await deleteComments({ id: id });
+    emits('delete3', id);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+/**
+ * 编辑
+ */
+const editRow = (row) => {
+  selectedRow.value = { ...row };
+  dialogVisible.value = true;
+};
+/**
+ * 编辑更新用户
+ */
+const toupd = async () => {
+  try {
+    // 调用后端服务的更新方法，传递selectedRow的值
+    await updateComments(selectedRow.value);
+    // 更新成功后的逻辑
+    console.log('教师管理更新成功');
+    dialogVisible.value = false; // 关闭Dialog对话框
+    // 更新el-table的数据，可以重新获取数据或者更新对应行的数据
+    emits('updatecom');
+  } catch (error) {
+    console.error(error);
+  }
+};
+/**
+ * 添加
+ */
+const comData = reactive({
+      name: '',
+      comment: ''
+    });
+const addSort = async () => {
+        await getaddComments(comData);
+        // 关闭对话框
+        dialogVisible2.value = false;
+        emits('updatecom');
+};
+
+const currentPage = ref(1); // 当前页数
+const pageSize = ref(11); // 每页显示的条数
+const total = computed(() => commentdata.value.length); // 总条数
+
+// 监听每页显示条数变化
+const handleSizeChange = (val) => {
+  pageSize.value = val;
+};
+
+// 监听当前页数变化
+const handleCurrentChange = (val) => {
+  currentPage.value = val;
+};
+
+// 根据当前页数和每页显示的条数计算分页后的数据
+const paginated = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = currentPage.value * pageSize.value;
+  return commentdata.value.slice(start, end);
+});
+
+</script>
+
+<style scoped>
+.dialog-footer button:first-child {
+  margin-right: 10px;
+}
+</style>
