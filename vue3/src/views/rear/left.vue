@@ -26,7 +26,7 @@
   		<el-tab-pane label="测试管理" >Task</el-tab-pane>
   	  </el-tabs>
   <div style="height: 100px; background-color: #a0cfff; text-align: center; line-height: 100px; color: #b1b3b8;">
-	  <h3>P22计算机应用工程2班-俞东旺-毕设</h3>
+	  <h3></h3>
   </div>
   </template>
   
